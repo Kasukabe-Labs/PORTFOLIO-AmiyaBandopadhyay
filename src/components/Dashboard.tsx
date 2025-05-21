@@ -8,6 +8,7 @@ const Dashboard = () => {
   const [uploading, setUploading] = useState(false);
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Awards');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -15,44 +16,56 @@ const Dashboard = () => {
   }, []);
 
   const fetchImages = async () => {
-    const { data, error } = await supabase
-      .from('gallery')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('gallery')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching images:', error);
-    } else {
+      if (error) throw error;
       setImages(data || []);
+    } catch (error: any) {
+      console.error('Error fetching images:', error.message);
+      setError('Failed to fetch images');
     }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-
-    const file = e.target.files[0];
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random()}.${fileExt}`;
-    const filePath = `${fileName}`;
-
-    setUploading(true);
-
     try {
-      const { error: uploadError } = await supabase.storage
+      if (!e.target.files || e.target.files.length === 0) {
+        throw new Error('Please select an image to upload');
+      }
+
+      const file = e.target.files[0];
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Please select a valid image file');
+      }
+
+      setError('');
+      setUploading(true);
+
+      // Generate a unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+
+      // Upload file to Supabase storage
+      const { error: uploadError, data } = await supabase.storage
         .from('gallery')
-        .upload(filePath, file);
+        .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
+      // Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from('gallery')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
+      // Save record to database
       const { error: dbError } = await supabase
         .from('gallery')
         .insert([
           {
-            title,
+            title: title || 'Untitled',
             category,
             image: publicUrl,
           },
@@ -60,11 +73,16 @@ const Dashboard = () => {
 
       if (dbError) throw dbError;
 
-      fetchImages();
+      // Refresh the image list
+      await fetchImages();
+      
+      // Reset form
       setTitle('');
       setCategory('Awards');
-    } catch (error) {
+      
+    } catch (error: any) {
       console.error('Error uploading image:', error);
+      setError(error.message);
     } finally {
       setUploading(false);
     }
@@ -72,22 +90,28 @@ const Dashboard = () => {
 
   const handleDelete = async (id: string, imagePath: string) => {
     try {
+      setError('');
       const fileName = imagePath.split('/').pop();
       
-      await supabase.storage
+      // Delete file from storage
+      const { error: storageError } = await supabase.storage
         .from('gallery')
         .remove([fileName]);
 
-      const { error } = await supabase
+      if (storageError) throw storageError;
+
+      // Delete record from database
+      const { error: dbError } = await supabase
         .from('gallery')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (dbError) throw dbError;
 
-      fetchImages();
-    } catch (error) {
+      await fetchImages();
+    } catch (error: any) {
       console.error('Error deleting image:', error);
+      setError(error.message);
     }
   };
 
@@ -109,6 +133,12 @@ const Dashboard = () => {
             Logout
           </button>
         </div>
+
+        {error && (
+          <div className="bg-red-50 text-red-500 p-4 rounded-md mb-6">
+            {error}
+          </div>
+        )}
 
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">Add New Image</h2>
