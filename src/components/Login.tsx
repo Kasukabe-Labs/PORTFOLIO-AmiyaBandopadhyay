@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { Shield } from 'lucide-react';
@@ -9,30 +9,6 @@ const Login = () => {
   const [error, setError] = useState('');
   const [isResetting, setIsResetting] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    setupDefaultAdmin();
-  }, []);
-
-  const setupDefaultAdmin = async () => {
-    try {
-      const { data: { users }, error: fetchError } = await supabase.auth.admin.listUsers();
-      
-      if (fetchError) throw fetchError;
-
-      // Only create default admin if no users exist
-      if (!users || users.length === 0) {
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: 'amiyalic@rediffmail.com',
-          password: 'Admin123',
-        });
-
-        if (signUpError) throw signUpError;
-      }
-    } catch (error) {
-      console.error('Error setting up default admin:', error);
-    }
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
