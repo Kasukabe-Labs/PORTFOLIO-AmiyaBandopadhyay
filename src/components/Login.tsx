@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { Shield } from 'lucide-react';
@@ -7,7 +7,32 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setupDefaultAdmin();
+  }, []);
+
+  const setupDefaultAdmin = async () => {
+    try {
+      const { data: { users }, error: fetchError } = await supabase.auth.admin.listUsers();
+      
+      if (fetchError) throw fetchError;
+
+      // Only create default admin if no users exist
+      if (!users || users.length === 0) {
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: 'amiyalic@rediffmail.com',
+          password: 'Admin123',
+        });
+
+        if (signUpError) throw signUpError;
+      }
+    } catch (error) {
+      console.error('Error setting up default admin:', error);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +49,29 @@ const Login = () => {
       }
     } catch (error: any) {
       setError(error.message);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      setError('Please enter your email address');
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      setError('');
+      alert('Password reset instructions have been sent to your email');
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -72,11 +120,19 @@ const Login = () => {
 
           <button
             type="submit"
-            className="w-full bg-[#005DA6] text-white font-bold py-3 px-4 rounded-md hover:bg-[#004a85] transition-colors"
+            className="w-full bg-[#005DA6] text-white font-bold py-3 px-4 rounded-md hover:bg-[#004a85] transition-colors mb-4"
           >
             Login
           </button>
         </form>
+
+        <button
+          onClick={handleResetPassword}
+          disabled={isResetting}
+          className="w-full text-[#005DA6] text-sm hover:underline transition-colors"
+        >
+          {isResetting ? 'Sending reset instructions...' : 'Reset Password'}
+        </button>
       </div>
     </div>
   );
