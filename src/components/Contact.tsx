@@ -2,8 +2,20 @@
 import React, { useState } from 'react';
 import { Phone, Mail } from 'lucide-react';
 
+type FormData = {
+  name: string;
+  email: string;
+  phone: string;
+  subject: string;
+  message: string;
+};
+
+type FormErrors = {
+  [key: string]: string;
+};
+
 const Contact = () => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
     phone: '',
@@ -12,24 +24,111 @@ const Contact = () => {
   });
 
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  // Validation functions
+  const validateEmail = (email: string): boolean => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  const validatePhone = (phone: string): boolean => {
+    const re = /^\d{10,15}$/; // Between 10-15 digits
+    return re.test(phone);
+  };
+
+  const validateField = (name: string, value: string): string => {
+    if (name === 'email' && value && !validateEmail(value)) {
+      return 'Please enter a valid email address';
+    }
+    if (name === 'phone' && value && !validatePhone(value)) {
+      return 'Please enter a valid phone number (10-15 digits)';
+    }
+    return '';
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Clear any existing error for this field when user types
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+    
     setFormData(prevState => ({
       ...prevState,
       [name]: value
     }));
   };
+  
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    if (name === 'email' || name === 'phone') {
+      const error = validateField(name, value);
+      if (error) {
+        setErrors(prev => ({
+          ...prev,
+          [name]: error
+        }));
+      }
+    }
+  };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Here you would normally send the form data to a server
-    console.log(formData);
-    setFormSubmitted(true);
+    
+    // Validate all fields
+    const newErrors: FormErrors = {};
+    
+    // Required fields validation
+    if (!formData.name.trim()) newErrors.name = 'Name is required';
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!validatePhone(formData.phone)) {
+      newErrors.phone = 'Please enter a valid phone number (10-15 digits)';
+    }
+    
+    if (!formData.message.trim()) newErrors.message = 'Message is required';
+    
+    // If there are validation errors, don't submit
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setIsSubmitting(false);
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setSubmitError('');
+    setErrors({});
 
-    // Reset form after 3 seconds
-    setTimeout(() => {
-      setFormSubmitted(false);
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to send message');
+      }
+
+      setFormSubmitted(true);
       setFormData({
         name: '',
         email: '',
@@ -37,16 +136,38 @@ const Contact = () => {
         subject: '',
         message: ''
       });
-    }, 5000);
+
+      // Reset success message after 5 seconds
+      const timer = setTimeout(() => {
+        setFormSubmitted(false);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send message. Please try again.';
+      setSubmitError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <section id="contact" className="py-20 bg-white">
       <div className="container mx-auto px-4 md:px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-            Contact <span className="text-[#005DA6]">Me</span>
-          </h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Get In Touch</h2>
+          <p className="text-gray-600 mb-8">Fill out the form below to send me a message.</p>
+          {formSubmitted && (
+            <div className="mb-6 p-4 bg-green-100 text-green-700 rounded-md">
+              Thank you for your message! I&apos;ll get back to you soon.
+            </div>
+          )}
+          {submitError && (
+            <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-md">
+              {submitError}
+            </div>
+          )}
           <div className="w-20 h-1 bg-[#F7CB05] mx-auto mb-6"></div>
           <p className="text-gray-600 max-w-3xl mx-auto">
             Have questions about LIC policies or need personalized advice? I&apos;m here to help you secure your financial future.
@@ -87,13 +208,6 @@ const Contact = () => {
             <div className="bg-white rounded-lg shadow-lg p-8 border border-gray-100">
               <h3 className="text-2xl font-bold text-gray-800 mb-6">Send Me a Message</h3>
 
-              {formSubmitted ? (
-                <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-4 mb-6">
-                  <h4 className="font-semibold">Thank you for your message!</h4>
-                  <p>I&apos;ll get back to you within 24 hours.</p>
-                </div>
-              ) : null}
-
               <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   <div>
@@ -106,10 +220,12 @@ const Contact = () => {
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-[#005DA6] focus:border-[#005DA6] focus:outline-none"
+                      onBlur={handleBlur}
+                      className={`w-full px-4 py-2 border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-[#005DA6] focus:border-[#005DA6] focus:outline-none text-black`}
                       placeholder="Your name"
                       required
                     />
+                    {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
                   </div>
 
                   <div>
@@ -122,10 +238,12 @@ const Contact = () => {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-[#005DA6] focus:border-[#005DA6] focus:outline-none"
+                      onBlur={handleBlur}
+                      className={`w-full px-4 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-[#005DA6] focus:border-[#005DA6] focus:outline-none text-black`}
                       placeholder="Your email"
                       required
                     />
+                    {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
                   </div>
                 </div>
 
@@ -140,10 +258,12 @@ const Contact = () => {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-[#005DA6] focus:border-[#005DA6] focus:outline-none"
-                      placeholder="Your phone"
+                      onBlur={handleBlur}
+                      className={`w-full px-4 py-2 border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-[#005DA6] focus:border-[#005DA6] focus:outline-none text-black`}
+                      placeholder="Your phone (10-15 digits)"
                       required
                     />
+                    {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
                   </div>
 
                   <div>
@@ -156,7 +276,7 @@ const Contact = () => {
                       name="subject"
                       value={formData.subject}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-[#005DA6] focus:border-[#005DA6] focus:outline-none"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-[#005DA6] focus:border-[#005DA6] focus:outline-none text-black"
                       placeholder="Inquiry subject"
                     />
                   </div>
@@ -171,18 +291,21 @@ const Contact = () => {
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     rows={5}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-[#005DA6] focus:border-[#005DA6] focus:outline-none"
+                    className={`w-full px-4 py-2 border ${errors.message ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-[#005DA6] focus:border-[#005DA6] focus:outline-none text-black`}
                     placeholder="How can I help you?"
                     required
                   ></textarea>
+                  {errors.message && <p className="mt-1 text-sm text-red-600">{errors.message}</p>}
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-[#005DA6] text-white font-semibold py-3 px-6 rounded-md shadow hover:bg-[#004a85] transition-all duration-300"
+                  disabled={isSubmitting}
+                  className={`w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 transition-colors ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                  Send Message
+                  {isSubmitting ? 'Sending...' : 'Send Message'}
                 </button>
               </form>
             </div>

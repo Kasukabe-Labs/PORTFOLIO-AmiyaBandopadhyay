@@ -1,5 +1,5 @@
 'use client'
-import { Shield, Phone, Mail, MapPin, ArrowUp } from 'lucide-react';
+import { Phone, Mail, MapPin, ArrowUp } from 'lucide-react';
 
 const Footer = () => {
   const scrollToTop = () => {
@@ -15,14 +15,14 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center mb-6">
-              <Shield className="h-8 w-8 text-[#F7CB05]" />
-              <span className="ml-2 text-xl font-semibold text-white">
-                Anil Kumar
-                <span className="text-[#F7CB05] font-bold"> LIC</span>
-              </span>
+              <a href="#" className="flex items-center">
+                <span className="text-xl font-semibold text-white">
+                  Amiya Bandopadhyay
+                </span>
+              </a>
             </div>
             <p className="text-gray-400 mb-6">
-              With 30 years of trusted experience in LIC and 15+ years in General Insurance. I help families across India achieve financial security and peace of mind.
+              With 30 years of trusted experience in LIC and 15+ years in General Insurance. I help families across India and NRI clients achieve financial security and peace of mind.
             </p>
           </div>
 
@@ -83,11 +83,11 @@ const Footer = () => {
               </li>
               <li className="flex items-center">
                 <Phone className="h-5 w-5 text-[#F7CB05] flex-shrink-0" />
-                <span className="ml-3 text-gray-400">+91 9831029868</span>
+                <span className="ml-3 text-gray-400"><a href="tel:+919831029868" target="_blank" rel="noopener noreferrer">+91 9831029868</a></span>
               </li>
               <li className="flex items-center">
                 <Mail className="h-5 w-5 text-[#F7CB05] flex-shrink-0" />
-                <span className="ml-3 text-gray-400">amiyalic@rediffmail.com</span>
+                <span className="ml-3 text-gray-400"><a href="mailto:amiyalic@rediffmail.com" target="_blank" rel="noopener noreferrer">amiyalic@rediffmail.com</a></span>
               </li>
             </ul>
             <div className="mt-6">
@@ -95,7 +95,7 @@ const Footer = () => {
                 href="#contact"
                 className="inline-block bg-[#F7CB05] text-[#005DA6] font-semibold py-2 px-6 rounded-md shadow hover:bg-[#e7bd00] transition-all duration-300"
               >
-                Get a Quote
+                Get a Consultation
               </a>
             </div>
           </div>
@@ -107,6 +107,9 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm mb-4 md:mb-0">
               © {new Date().getFullYear()} Amiya Bandopadhyay LIC Agent. All rights reserved.
+            </p>
+            <p className="text-gray-400 text-sm mb-4 md:mb-0">
+              Developed by <a href="https://asheshbandooadhyay.com" target="_blank" rel="noopener noreferrer" className="text-[#F7CB05] hover:underline">Ashesh Bandoo Adhyay</a>
             </p>
           </div>
         </div>
