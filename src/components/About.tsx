@@ -25,13 +25,13 @@ const About = () => {
                 className="w-full h-auto rounded"
               />
             </div>
-            <div className="absolute top-10 -right-10 bg-[#F7CB05] p-4 rounded-lg shadow-lg z-20">
+            <div className="absolute -top-8 md:-right-10 -right-0 bg-[#F7CB05] p-4 rounded-lg shadow-lg z-20">
               <div className="text-center">
                 <h3 className="text-4xl font-bold text-[#005DA6]">30+</h3>
                 <p className="text-[#005DA6] font-medium">Years Experience</p>
               </div>
             </div>
-            <div className="absolute -bottom-8 -left-8 bg-[#005DA6] p-6 rounded-lg shadow-lg z-20">
+            <div className="absolute -bottom-8 md:-left-10 -left-0 bg-[#005DA6] p-6 rounded-lg shadow-lg z-20">
               <div className="text-center">
                 <h3 className="text-3xl font-bold text-white">2000+</h3>
                 <p className="text-white/90 font-medium">Happy Clients</p>

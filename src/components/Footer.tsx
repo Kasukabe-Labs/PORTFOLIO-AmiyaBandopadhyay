@@ -109,7 +109,7 @@ const Footer = () => {
               © {new Date().getFullYear()} Amiya Bandopadhyay LIC Agent. All rights reserved.
             </p>
             <p className="text-gray-400 text-sm mb-4 md:mb-0">
-              Developed by <a href="https://asheshbandooadhyay.com" target="_blank" rel="noopener noreferrer" className="text-[#F7CB05] hover:underline">Ashesh Bandoo Adhyay</a>
+              Developed by <a href="mailto:lbandopadhyay2@gmail.com" target="_blank" rel="noopener noreferrer" className="text-[#F7CB05] hover:underline">Ashesh Bandopadhyay</a>
             </p>
           </div>
         </div>
